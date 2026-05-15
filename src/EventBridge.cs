@@ -76,7 +76,16 @@ public static class EventBridge
         if (status != null && status != _lastSentStatus)
         {
             _lastSentStatus = status;
-            WebhookClient.PostStatus(status);
+            if (status == "finished")
+            {
+                // Wait a few seconds before sending the round-end webhook so the HTTP request
+                // does not compete with the server's end-of-round work and cause lag.
+                WebhookClient.PostStatusAfterDelay(status, TimeSpan.FromSeconds(5));
+            }
+            else
+            {
+                WebhookClient.PostStatus(status);
+            }
         }
     }
 

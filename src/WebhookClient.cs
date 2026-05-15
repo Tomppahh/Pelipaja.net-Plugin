@@ -25,6 +25,16 @@ public static class WebhookClient
         _ = ProcessQueueAsync();
     }
 
+    public static void PostStatusAfterDelay(string status, TimeSpan delay)
+    {
+        // Delay the post after round end to avoid adding lag while the server is still settling.
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(delay);
+            PostStatus(status);
+        });
+    }
+
     private static async Task ProcessQueueAsync()
     {
         if (_isProcessing) return;

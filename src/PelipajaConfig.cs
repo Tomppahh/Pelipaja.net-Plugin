@@ -1,3 +1,7 @@
+using CounterStrikeSharp.API;
+using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Modules.Utils;
+
 namespace MatchUp;
 
 public class TeamInfo {
@@ -18,6 +22,7 @@ public static class PelipajaConfig {
     public static TeamInfo? Team1 { get; private set; }
     public static TeamInfo? Team2 { get; private set; } 
     public static string? OwnerSteamId { get; private set; }
+
     public static void Load()
     {
         WebhookUrl = Environment.GetEnvironmentVariable("MATCHUP_WEBHOOK_URL");
@@ -36,11 +41,53 @@ public static class PelipajaConfig {
         Mode = mode;
         MatchId = matchId;
         OwnerSteamId = ownerSteamId;
-        Team1 = team1;
-        Team2 =  team2;
+        Team1 = NormalizeTeam(team1);
+        Team2 = NormalizeTeam(team2);
 
         Console.WriteLine($"[Pelipaja] Config received - Mode: {Mode}, MatchId: {MatchId}");
         Console.WriteLine($"[Pelipaja] Team1: {Team1.Name}, Team2: {Team2.Name}");
+        Console.WriteLine($"[Pelipaja] Team1 Players: {string.Join(", ", Team1.Players)}");
+        Console.WriteLine($"[Pelipaja] Team2 Players: {string.Join(", ", Team2.Players)}");
+    }
+
+    public static void AssignTeamIfConfigured(CCSPlayerController player)
+    {
+        if (Team1 == null || Team2 == null) return;
+
+        var steamId = player.SteamID.ToString();
+        if (Team1.Players.Contains(steamId))
+        {
+            player.ChangeTeam(CsTeam.Terrorist);
+            player.PrintToChat($" {ChatColors.Green}You have been assigned to {Team1.Name}");
+            return;
+        }
+
+        if (Team2.Players.Contains(steamId))
+        {
+            player.ChangeTeam(CsTeam.CounterTerrorist);
+            player.PrintToChat($" {ChatColors.Green}You have been assigned to {Team2.Name}");
+        }
+    }
+
+    public static void AssignConnectedPlayers()
+    {
+        var playerEntities = Utilities.FindAllEntitiesByDesignerName<CCSPlayerController>("cs_player_controller");
+        foreach (var player in playerEntities)
+        {
+            if (!player.IsValid) continue;
+            AssignTeamIfConfigured(player);
+        }
+    }
+
+    private static TeamInfo NormalizeTeam(TeamInfo team)
+    {
+        team.Name = team.Name.Trim();
+        team.Players = team.Players
+            .Where(playerId => !string.IsNullOrWhiteSpace(playerId))
+            .Select(playerId => playerId.Trim())
+            .ToList();
+
+        return team;
     }
     
 }

@@ -190,6 +190,10 @@ public class MatchUp : BasePlugin
     public HookResult OnPlayerConnect(EventPlayerConnectFull @event, GameEventInfo info)
     {
         EventBridge.OnPlayerConnect(@event);
+        if (@event.Userid != null)
+        {
+            PelipajaConfig.AssignTeamIfConfigured(@event.Userid);
+        }
         StateMachine.GetCurrentState().OnPlayerConnect(@event);
         return HookResult.Continue;
     }
