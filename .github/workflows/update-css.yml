@@ -21,7 +21,7 @@ jobs:
       - name: Get current version
         id: current
         run: |
-          CURRENT=$(dotnet list package --format json | jq -r '.projects[0].frameworks.[0].topLevelPackages[] | select(.id == "CounterStrikeSharp.API") | .requestedVersion')
+          CURRENT=$(dotnet list MatchUp.csproj package --format json | jq -r '.projects[0].frameworks.[0].topLevelPackages[] | select(.id == "CounterStrikeSharp.API") | .requestedVersion')
           echo "version=$CURRENT" >> "$GITHUB_OUTPUT"
           echo "Current version: $CURRENT"
 
@@ -72,7 +72,7 @@ jobs:
 
       - name: Verify build
         if: steps.compare.outputs.up_to_date == 'false'
-        run: dotnet build -c Release
+        run: dotnet build MatchUp.csproj -c Release
 
       - name: Log in to GHCR
         if: steps.compare.outputs.up_to_date == 'false'
