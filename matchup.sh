@@ -3,24 +3,38 @@ setup=$HOME/setup.sh
 base_folder=${HOME}/${STEAM_APP_DIR}/game/csgo
 addons_folder=$base_folder/addons
 gameinfo=$base_folder/gameinfo.gi
-matchup_version=${MATCHUP_VERSION:-"v0.9.1"}
-matchup_version_file=$addons_folder/matchup_version_$matchup_version
-matchup_download_url="https://github.com/Juksuu/MatchUp/releases/download/$matchup_version/MatchUp+cssharp+metamod.zip"
 gameinfo_insert_line='          Game    csgo/addons/metamod'
 
-install_matchup() {
-  if [ ! -f "$matchup_version_file" ]; then
-    echo "Installing MatchUp $matchup_version..."
-    wget -q "$matchup_download_url" -O /tmp/matchup.zip
-    mkdir -p "$addons_folder"
-    cd $base_folder
-    busybox unzip -o /tmp/matchup.zip
-    rm /tmp/matchup.zip
-    rm -f $addons_folder/matchup_version_*
-    touch "$matchup_version_file"
-    echo "MatchUp $matchup_version installed."
+install_metamod() {
+  local version=${METAMOD_VERSION:-1401}
+  local marker="$addons_folder/metamod_installed_$version"
+  if [ ! -f "$marker" ]; then
+    echo "Installing Metamod $version..."
+    wget -q "https://github.com/alliedmodders/metamod-source/releases/download/2.0.0.${version}/mmsource-2.0.0-git${version}-linux.tar.gz" -O /tmp/metamod.tar.gz
+    cd "$base_folder"
+    tar -xzf /tmp/metamod.tar.gz
+    rm /tmp/metamod.tar.gz
+    touch "$marker"
+    echo "Metamod $version installed."
   else
-    echo "MatchUp $matchup_version already up to date."
+    echo "Metamod $version already installed."
+  fi
+}
+
+install_css() {
+  local version=${CSSAPI_VERSION:-1.0.367}
+  local marker="$addons_folder/counterstrikesharp/css_installed_$version"
+  if [ ! -f "$marker" ]; then
+    echo "Installing CounterStrikeSharp $version..."
+    wget -q "https://github.com/roflmuffin/CounterStrikeSharp/releases/download/v${version}/counterstrikesharp-with-runtime-linux-${version}.zip" -O /tmp/css.zip
+    cd "$base_folder"
+    unzip -o /tmp/css.zip
+    rm /tmp/css.zip
+    mkdir -p "$addons_folder/counterstrikesharp"
+    touch "$marker"
+    echo "CounterStrikeSharp $version installed."
+  else
+    echo "CounterStrikeSharp $version already installed."
   fi
 }
 
@@ -42,7 +56,8 @@ if [ ! -z $1 ]; then
   $1
 else
   $setup install_and_update
-  install_matchup
+  install_metamod
+  install_css
   install_pelipaja
   update_gameinfo
   exec $setup start
