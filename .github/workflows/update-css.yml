@@ -28,7 +28,7 @@ jobs:
       - name: Get latest version from NuGet
         id: latest
         run: |
-          LATEST=$(curl -s "https://api.nuget.org/v3-flatcontainer/counterstrikesharp.api/index.json" | jq -r '.[-1]')
+          LATEST=$(curl -s "https://api.nuget.org/v3-flatcontainer/counterstrikesharp.api/index.json" | jq -r '[.versions[] | select(test("alpha|beta|rc") | not)] | last')
           echo "version=$LATEST" >> "$GITHUB_OUTPUT"
           echo "Latest version: $LATEST"
 
