@@ -25,12 +25,35 @@ jobs:
           echo "version=$CURRENT" >> "$GITHUB_OUTPUT"
           echo "Current version: $CURRENT"
 
-      - name: Get latest version from NuGet
+      - name: Get target framework
+        id: tfm
+        run: |
+          TFM=$(cat MatchUp.csproj | grep -oP 'TargetFramework>\K[^<]+')
+          echo "tfm=$TFM" >> "$GITHUB_OUTPUT"
+          echo "Target framework: $TFM"
+
+      - name: Get latest compatible version from NuGet
         id: latest
         run: |
-          LATEST=$(curl -s "https://api.nuget.org/v3-flatcontainer/counterstrikesharp.api/index.json" | jq -r '[.versions[] | select(test("alpha|beta|rc") | not)] | last')
+          TFM="${{ steps.tfm.outputs.tfm }}"
+          VERSIONS=$(curl -s "https://api.nuget.org/v3-flatcontainer/counterstrikesharp.api/index.json" | jq -r '[.versions[] | select(test("alpha|beta|rc") | not)] | reverse | .[]')
+
+          LATEST=""
+          for V in $VERSIONS; do
+            NUSPEC=$(curl -s "https://api.nuget.org/v3-flatcontainer/counterstrikesharp.api/$V/counterstrikesharp.api.nuspec")
+            if echo "$NUSPEC" | grep -q "targetFramework=\"$TFM\""; then
+              LATEST="$V"
+              break
+            fi
+          done
+
+          if [ -z "$LATEST" ]; then
+            echo "No compatible version found for $TFM"
+            exit 1
+          fi
+
           echo "version=$LATEST" >> "$GITHUB_OUTPUT"
-          echo "Latest version: $LATEST"
+          echo "Latest compatible version: $LATEST"
 
       - name: Compare versions
         id: compare
