@@ -1,4 +1,4 @@
-name: Auto-Update CounterStrikeSharp
+name: Auto-Update CSS & Metamod
 
 on:
   schedule:
@@ -17,12 +17,14 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
-      - name: Get current version
-        id: current
+      # ── CounterStrikeSharp ───────────────────────────────────────────────
+
+      - name: Get current CSS version
+        id: current_css
         run: |
           CURRENT=$(dotnet list MatchUp.csproj package --format json | jq -r '.projects[0].frameworks.[0].topLevelPackages[] | select(.id == "CounterStrikeSharp.API") | .requestedVersion')
           echo "version=$CURRENT" >> "$GITHUB_OUTPUT"
-          echo "Current version: $CURRENT"
+          echo "Current CSS version: $CURRENT"
 
       - name: Get target framework
         id: tfm
@@ -31,8 +33,8 @@ jobs:
           echo "tfm=$TFM" >> "$GITHUB_OUTPUT"
           echo "Target framework: $TFM"
 
-      - name: Get latest compatible version from NuGet
-        id: latest
+      - name: Get latest compatible CSS version
+        id: latest_css
         run: |
           TFM="${{ steps.tfm.outputs.tfm }}"
           VERSIONS=$(curl -s "https://api.nuget.org/v3-flatcontainer/counterstrikesharp.api/index.json" | jq -r '[.versions[] | select(test("alpha|beta|rc") | not)] | reverse | .[]')
@@ -52,29 +54,75 @@ jobs:
           fi
 
           echo "version=$LATEST" >> "$GITHUB_OUTPUT"
-          echo "Latest compatible version: $LATEST"
+          echo "Latest compatible CSS version: $LATEST"
 
-      - name: Compare versions
-        id: compare
+      - name: Compare CSS versions
+        id: compare_css
         run: |
-          if [ "${{ steps.current.outputs.version }}" = "${{ steps.latest.outputs.version }}" ]; then
+          if [ "${{ steps.current_css.outputs.version }}" = "${{ steps.latest_css.outputs.version }}" ]; then
             echo "up_to_date=true" >> "$GITHUB_OUTPUT"
-            echo "Already up to date."
+            echo "CSS already up to date."
           else
             echo "up_to_date=false" >> "$GITHUB_OUTPUT"
-            echo "Update available: ${{ steps.current.outputs.version }} -> ${{ steps.latest.outputs.version }}"
+            echo "CSS update available: ${{ steps.current_css.outputs.version }} -> ${{ steps.latest_css.outputs.version }}"
           fi
 
-      - name: Update package
-        if: steps.compare.outputs.up_to_date == 'false'
-        run: dotnet add package CounterStrikeSharp.API --version "${{ steps.latest.outputs.version }}"
+      - name: Update CSS package
+        if: steps.compare_css.outputs.up_to_date == 'false'
+        run: dotnet add package CounterStrikeSharp.API --version "${{ steps.latest_css.outputs.version }}"
+
+      # ── Metamod ─────────────────────────────────────────────────────────
+
+      - name: Get current Metamod version
+        id: current_mm
+        run: |
+          CURRENT=$(grep -oP 'METAMOD_VERSION=\K[0-9]+' matchup.sh)
+          echo "version=$CURRENT" >> "$GITHUB_OUTPUT"
+          echo "Current Metamod version: $CURRENT"
+
+      - name: Get latest Metamod version
+        id: latest_mm
+        run: |
+          LATEST=$(curl -s "https://api.github.com/repos/alliedmodders/metamod-source/releases" | jq -r '[.[] | select(.tag_name | startswith("2.0.0."))][0].tag_name' | sed 's/2.0.0.//')
+          echo "version=$LATEST" >> "$GITHUB_OUTPUT"
+          echo "Latest Metamod version: $LATEST"
+
+      - name: Compare Metamod versions
+        id: compare_mm
+        run: |
+          if [ "${{ steps.current_mm.outputs.version }}" = "${{ steps.latest_mm.outputs.version }}" ]; then
+            echo "up_to_date=true" >> "$GITHUB_OUTPUT"
+            echo "Metamod already up to date."
+          else
+            echo "up_to_date=false" >> "$GITHUB_OUTPUT"
+            echo "Metamod update available: ${{ steps.current_mm.outputs.version }} -> ${{ steps.latest_mm.outputs.version }}"
+          fi
+
+      - name: Update Metamod version
+        if: steps.compare_mm.outputs.up_to_date == 'false'
+        run: |
+          sed -i "s/METAMOD_VERSION=${{ steps.current_mm.outputs.version }}/METAMOD_VERSION=${{ steps.latest_mm.outputs.version }}/" matchup.sh
+          sed -i "s/ARG METAMOD_VERSION=${{ steps.current_mm.outputs.version }}/ARG METAMOD_VERSION=${{ steps.latest_mm.outputs.version }}/" Dockerfile
+
+      # ── Build & push ────────────────────────────────────────────────────
+
+      - name: Should rebuild
+        id: should_rebuild
+        run: |
+          if [ "${{ steps.compare_css.outputs.up_to_date }}" = "false" ] || [ "${{ steps.compare_mm.outputs.up_to_date }}" = "false" ]; then
+            echo "rebuild=true" >> "$GITHUB_OUTPUT"
+            echo "Rebuild needed."
+          else
+            echo "rebuild=false" >> "$GITHUB_OUTPUT"
+            echo "Everything up to date, skipping build."
+          fi
 
       - name: Verify build
-        if: steps.compare.outputs.up_to_date == 'false'
+        if: steps.should_rebuild.outputs.rebuild == 'true'
         run: dotnet build MatchUp.csproj -c Release
 
       - name: Log in to GHCR
-        if: steps.compare.outputs.up_to_date == 'false'
+        if: steps.should_rebuild.outputs.rebuild == 'true'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -82,28 +130,34 @@ jobs:
           password: ${{ secrets.GHCR_TOKEN }}
 
       - name: Set up Docker Buildx
-        if: steps.compare.outputs.up_to_date == 'false'
+        if: steps.should_rebuild.outputs.rebuild == 'true'
         uses: docker/setup-buildx-action@v3
 
       - name: Build and push Docker image
-        if: steps.compare.outputs.up_to_date == 'false'
+        if: steps.should_rebuild.outputs.rebuild == 'true'
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
           build-args: |
-            CSSAPI_VERSION=${{ steps.latest.outputs.version }}
+            CSSAPI_VERSION=${{ steps.latest_css.outputs.version }}
+            METAMOD_VERSION=${{ steps.latest_mm.outputs.version }}
           tags: |
             ghcr.io/tomppahh/pelipaja-cs2:latest
-            ghcr.io/tomppahh/pelipaja-cs2:v${{ steps.latest.outputs.version }}
+            ghcr.io/tomppahh/pelipaja-cs2:v${{ steps.latest_css.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Commit version bump
-        if: steps.compare.outputs.up_to_date == 'false'
+      # ── Commit ──────────────────────────────────────────────────────────
+
+      - name: Commit updates
+        if: steps.should_rebuild.outputs.rebuild == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add MatchUp.csproj
-          git commit -m "chore: update CounterStrikeSharp.API to ${{ steps.latest.outputs.version }}"
+          git add MatchUp.csproj matchup.sh Dockerfile
+          MSG="chore: "
+          [ "${{ steps.compare_css.outputs.up_to_date }}" = "false" ] && MSG="${MSG}update CSS to ${{ steps.latest_css.outputs.version }}"
+          [ "${{ steps.compare_mm.outputs.up_to_date }}" = "false" ] && MSG="${MSG}update Metamod to ${{ steps.latest_mm.outputs.version }}"
+          git commit -m "$MSG"
           git push
