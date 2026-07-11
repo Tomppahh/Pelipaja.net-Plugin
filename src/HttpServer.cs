@@ -94,6 +94,11 @@ public static class HttpServer
 
                 Server.NextWorldUpdate(() => {
                     MatchConfig.SetMap(payload.Map);
+                    if (!string.IsNullOrEmpty(payload.WorkshopId) && Utils.IsValidWorkshopId(payload.WorkshopId))
+                    {
+                        MatchConfig.Map.WorkshopId = payload.WorkshopId;
+                        Console.WriteLine($"[Pelipaja] Workshop map ID: {payload.WorkshopId}");
+                    }
                     MatchConfig.SetTeamSize(payload.TeamSize.ToString());
                     MatchConfig.SetKnife(payload.KnifeRound.ToString());
                     MatchConfig.StartMatch();
@@ -133,6 +138,7 @@ public class MatchConfigPayload
     public string Mode { get; set; } = "manual";
     public string? MatchId { get; set; }
     public string? Map { get; set; }
+    public string? WorkshopId { get; set; }
     public int TeamSize { get; set; } = 5;
     public bool KnifeRound { get; set; } = true;
     public TeamInfo? Team1 { get; set; }

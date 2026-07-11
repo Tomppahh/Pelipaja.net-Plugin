@@ -91,14 +91,13 @@ public static class StatsProvider
                 sb.Append(",\"assists\":").Append(stats.Assists);
                 sb.Append(",\"headshotKills\":").Append(stats.HeadShotKills);
                 sb.Append(",\"utilityDamage\":").Append(stats.UtilityDamage);
-                sb.Append(",\"flashAssists\":").Append(stats.FlashAssists);
-                sb.Append(",\"shotsFired\":").Append(stats.ShotsFired);
-                sb.Append(",\"shotsOnTarget\":").Append(stats.ShotsOnTarget);
-                sb.Append(",\"totalDamage\":").Append(stats.TotalDamage);
-                sb.Append(",\"entryCount\":").Append(stats.Enemy2K + stats.Enemy3K + stats.Enemy4K + stats.Enemy5K);
-                sb.Append(",\"oneVoneCount\":").Append(stats.OneVoneCount);
-                sb.Append(",\"oneVoneWins\":").Append(stats.OneVoneWon);
-                sb.Append(",\"entryKills\":").Append(stats.Entrancekills);
+                sb.Append(",\"flashAssists\":").Append(stats.Flash_Successes);
+                sb.Append(",\"shotsFired\":").Append(stats.ShotsFiredTotal);
+                sb.Append(",\"shotsOnTarget\":").Append(stats.ShotsOnTargetTotal);
+                sb.Append(",\"totalDamage\":").Append(stats.Damage);
+                sb.Append(",\"entryCount\":").Append(stats.EntryCount);
+                sb.Append(",\"oneVoneCount\":").Append(stats.I1v1Count);
+                sb.Append(",\"oneVoneWins\":").Append(stats.I1v1Wins);
             }
 
             sb.Append('}');
