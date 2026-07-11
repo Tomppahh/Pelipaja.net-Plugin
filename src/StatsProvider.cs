@@ -62,7 +62,7 @@ public static class StatsProvider
         var first = true;
         foreach (var p in Utilities.FindAllEntitiesByDesignerName<CCSPlayerController>("cs_player_controller"))
         {
-            if (!p.IsValid || p.SteamID == 0) continue;
+            if (!p.IsValid || (p.SteamID == 0 && !MatchConfig.BotTestMode)) continue;
 
             if (!first) sb.Append(',');
             first = false;
@@ -77,8 +77,9 @@ public static class StatsProvider
             var stats = p.ActionTrackingServices?.MatchStats;
 
             sb.Append('{');
-            sb.Append("\"steamId\":").Append(p.SteamID);
+            sb.Append("\"steamId\":").Append(p.SteamID == 0 ? -(p.EntityIndex.Value + 1) : p.SteamID);
             sb.Append(",\"name\":\"").Append(EscapeJson(p.PlayerName)).Append('"');
+            sb.Append(",\"isBot\":").Append(p.IsBot.ToString().ToLower());
             sb.Append(",\"team\":\"").Append(side).Append('"');
             sb.Append(",\"score\":").Append(p.Score);
             sb.Append(",\"mvs\":").Append(p.MVPs);
@@ -131,7 +132,7 @@ public static class StatsProvider
         var first = true;
         foreach (var p in Utilities.FindAllEntitiesByDesignerName<CCSPlayerController>("cs_player_controller"))
         {
-            if (!p.IsValid || p.SteamID == 0) continue;
+            if (!p.IsValid || (p.SteamID == 0 && !MatchConfig.BotTestMode)) continue;
 
             if (!first) sb.Append(',');
             first = false;

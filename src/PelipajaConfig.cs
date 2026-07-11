@@ -18,6 +18,7 @@ public static class PelipajaConfig {
     public static TeamInfo? Team1 { get; private set; }
     public static TeamInfo? Team2 { get; private set; } 
     public static string? OwnerSteamId { get; private set; }
+    public static bool MatchStarted { get; set; }
     public static void Load()
     {
         WebhookUrl = Environment.GetEnvironmentVariable("MATCHUP_WEBHOOK_URL");
@@ -38,6 +39,7 @@ public static class PelipajaConfig {
         OwnerSteamId = ownerSteamId;
         Team1 = team1;
         Team2 =  team2;
+        MatchStarted = true;
 
         Console.WriteLine($"[Pelipaja] Config received - Mode: {Mode}, MatchId: {MatchId}");
         Console.WriteLine($"[Pelipaja] Team1: {Team1.Name}, Team2: {Team2.Name}");

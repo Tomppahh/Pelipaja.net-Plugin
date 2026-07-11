@@ -74,6 +74,15 @@ public static class HttpServer
 
             if (payload != null)
             {
+                // Deduplicate: ignore config if we already received one for this match
+                if (PelipajaConfig.Mode == "pelipaja" && PelipajaConfig.MatchId == payload.MatchId)
+                {
+                    Console.WriteLine($"[Pelipaja] Duplicate config for match {payload.MatchId}, ignoring");
+                    res.StatusCode = 200;
+                    res.Close();
+                    return;
+                }
+
                 Console.WriteLine($"[Pelipaja] Config received for match {payload.MatchId}");
 
                 PelipajaConfig.SetMatchConfig(
