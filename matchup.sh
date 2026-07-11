@@ -6,7 +6,7 @@ gameinfo=$base_folder/gameinfo.gi
 gameinfo_insert_line='          Game    csgo/addons/metamod'
 
 install_metamod() {
-  local version=${METAMOD_VERSION:-1401}
+  local version=${METAMOD_VERSION:-1403}
   local marker="$addons_folder/metamod_installed_$version"
   if [ ! -f "$marker" ]; then
     echo "Installing Metamod $version..."
