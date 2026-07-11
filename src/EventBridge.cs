@@ -15,17 +15,10 @@ public static class EventBridge
 {
     private static string? _lastSentStatus = null;
 
-    private static void Print(string tag, object data)
+    private static void Print(string tag, string json)
     {
         if (!MatchConfig.EventBridgeEnabled) return;
-
-        var node = JsonSerializer.SerializeToNode(data);
-        if (node is JsonObject jsonObject)
-        {
-            jsonObject["timestamp"] = DateTime.UtcNow.ToString("O"); // ISO 8601 UTC
-            var json = jsonObject.ToJsonString();
-            Console.WriteLine($"\n[MATCHUP_{tag.ToUpper()}] {json}\n");
-        }
+        Console.WriteLine($"\n[MATCHUP_{tag.ToUpper()}] {json}\n");
     }
 
     public static void OnChat(EventPlayerChat @event)
@@ -33,32 +26,20 @@ public static class EventBridge
         var player = Utilities.GetPlayerFromUserid(@event.Userid);
         if (player == null || !player.IsValid) return;
 
-        Print("CHAT", new
+        var side = player.TeamNum switch
         {
-            player = new
-            {
-                name = player.PlayerName,
-                steamId64 = player.SteamID,
-                side = player.TeamNum switch
-                {
-                    (byte)CsTeam.Terrorist => "T",
-                    (byte)CsTeam.CounterTerrorist => "CT",
-                    (byte)CsTeam.Spectator => "spectator",
-                    _ => "other"
-                }
-            },
-            message = @event.Text,
-            isTeamChat = @event.Teamonly
-        });
+            (byte)CsTeam.Terrorist => "T",
+            (byte)CsTeam.CounterTerrorist => "CT",
+            (byte)CsTeam.Spectator => "spectator",
+            _ => "other"
+        };
+
+        Print("CHAT", $"{{\"player\":{{\"name\":\"{EscapeJson(player.PlayerName)}\",\"steamId64\":{player.SteamID},\"side\":\"{side}\"}},\"message\":\"{EscapeJson(@event.Text)}\",\"isTeamChat\":{@event.Teamonly.ToString().ToLower()}}}");
     }
 
     public static void OnStateChange(GameState oldState, GameState newState)
     {
-        Print("STATE_CHANGE", new
-        {
-            oldState = oldState.ToString().ToLower(),
-            newState = newState.ToString().ToLower()
-        });
+        Print("STATE_CHANGE", $"{{\"oldState\":\"{oldState.ToString().ToLower()}\",\"newState\":\"{newState.ToString().ToLower()}\"}}");
 
         // Only send webhooks in pelipaja mode
         if (PelipajaConfig.Mode != "pelipaja") return;
@@ -85,11 +66,7 @@ public static class EventBridge
         var player = @event.Userid;
         if (player == null || !player.IsValid) return;
 
-        Print("PLAYER_CONNECT", new
-        {
-            name = player.PlayerName,
-            steamId64 = player.SteamID
-        });
+        Print("PLAYER_CONNECT", $"{{\"name\":\"{EscapeJson(player.PlayerName)}\",\"steamId64\":{player.SteamID}}}");
     }
 
     public static void OnPlayerDisconnect(EventPlayerDisconnect @event)
@@ -97,11 +74,7 @@ public static class EventBridge
         var player = @event.Userid;
         if (player == null || !player.IsValid) return;
 
-        Print("PLAYER_DISCONNECT", new
-        {
-            name = player.PlayerName,
-            steamId64 = player.SteamID
-        });
+        Print("PLAYER_DISCONNECT", $"{{\"name\":\"{EscapeJson(player.PlayerName)}\",\"steamId64\":{player.SteamID}}}");
     }
 
     public static void OnPlayerTeam(EventPlayerTeam @event)
@@ -109,65 +82,57 @@ public static class EventBridge
         var player = @event.Userid;
         if (player == null || !player.IsValid) return;
 
-        Print("PLAYER_TEAM", new
+        var side = @event.Team switch
         {
-            name = player.PlayerName,
-            steamId64 = player.SteamID,
-            side = @event.Team switch
-            {
-                (byte)CsTeam.Terrorist => "T",
-                (byte)CsTeam.CounterTerrorist => "CT",
-                (byte)CsTeam.Spectator => "spectator",
-                _ => "other"
-            }
-        });
+            (byte)CsTeam.Terrorist => "T",
+            (byte)CsTeam.CounterTerrorist => "CT",
+            (byte)CsTeam.Spectator => "spectator",
+            _ => "other"
+        };
+
+        Print("PLAYER_TEAM", $"{{\"name\":\"{EscapeJson(player.PlayerName)}\",\"steamId64\":{player.SteamID},\"side\":\"{side}\"}}");
     }
 
     public static void OnReset()
     {
-        Print("RESET", new { });
+        Print("RESET", "{}");
     }
 
     public static void OnRoundEnd(EventRoundEnd @event)
     {
-        Print("ROUND_END", new
+        var winner = @event.Winner switch
         {
-            winner = @event.Winner switch
-            {
-                (byte)CsTeam.Terrorist => "T",
-                (byte)CsTeam.CounterTerrorist => "CT",
-                _ => "none"
-            },
-            reason = @event.Reason
-        });
+            (byte)CsTeam.Terrorist => "T",
+            (byte)CsTeam.CounterTerrorist => "CT",
+            _ => "none"
+        };
+
+        Print("ROUND_END", $"{{\"winner\":\"{winner}\",\"reason\":{@event.Reason}}}");
     }
 
     public static void OnMatchEnd(EventCsWinPanelMatch @event, int ctScore, int tScore)
     {
-        Print("MATCH_END", new
-        {
-            ctScore,
-            tScore,
-            winner = ctScore > tScore ? "CT" : (tScore > ctScore ? "T" : "draw")
-        });
+        var winner = ctScore > tScore ? "CT" : (tScore > ctScore ? "T" : "draw");
+        Print("MATCH_END", $"{{\"ctScore\":{ctScore},\"tScore\":{tScore},\"winner\":\"{winner}\"}}");
     }
 
     public static void OnPause(string side)
     {
-        Print("PAUSE", new { side });
+        Print("PAUSE", $"{{\"side\":\"{side}\"}}");
     }
 
     public static void OnUnpause(string side)
     {
-        Print("UNPAUSE", new { side });
+        Print("UNPAUSE", $"{{\"side\":\"{side}\"}}");
     }
 
     public static void OnBackup(string adminName, int round)
     {
-        Print("BACKUP_RESTORE", new
-        {
-            admin = adminName,
-            round
-        });
+        Print("BACKUP_RESTORE", $"{{\"admin\":\"{EscapeJson(adminName)}\",\"round\":{round}}}");
+    }
+
+    private static string EscapeJson(string s)
+    {
+        return s.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", "\\r").Replace("\t", "\\t");
     }
 }

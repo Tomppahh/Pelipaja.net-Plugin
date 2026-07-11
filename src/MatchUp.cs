@@ -50,10 +50,13 @@ public class MatchUp : BasePlugin
     public void OnKickAll(CCSPlayerController? player, CommandInfo command)
     {
         var playerEntities = Utilities.FindAllEntitiesByDesignerName<CCSPlayerController>("cs_player_controller");
+        var sb = new System.Text.StringBuilder();
         foreach (var playerEntity in playerEntities)
         {
-            if (playerEntity.SteamID == 0) continue; // Player is a bot
-            Server.ExecuteCommand($"kick {playerEntity.PlayerName}");
+            if (playerEntity.SteamID == 0) continue;
+            sb.Clear();
+            sb.Append("kick ").Append(playerEntity.PlayerName);
+            Server.ExecuteCommand(sb.ToString());
         }
     }
 

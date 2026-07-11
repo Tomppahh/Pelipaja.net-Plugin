@@ -6,8 +6,12 @@ public class LoadingState : BaseState
     {
         Console.WriteLine("Switched to Loading state");
 
-        MatchConfig.LoadMaps();
-        MatchConfig.LoadSettings();
+        // Run file I/O on background thread to avoid blocking game thread
+        _ = Task.Run(() =>
+        {
+            MatchConfig.LoadMaps();
+            MatchConfig.LoadSettings();
+        });
     }
 
     public override void Leave() { }

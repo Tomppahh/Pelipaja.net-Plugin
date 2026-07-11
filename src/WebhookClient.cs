@@ -1,4 +1,4 @@
-using System.Net;
+using System.Net.Http.Headers;
 using System.Text.Json;
 using CounterStrikeSharp.API;
 
@@ -12,6 +12,7 @@ public static class WebhookClient
         MaxResponseContentBufferSize = 1024
     };
 
+    private static readonly MediaTypeHeaderValue _jsonMediaType = new("application/json");
     private static readonly Queue<string> _statusQueue = new();
     private static bool _isProcessing = false;
     private static readonly object _queueLock = new();
@@ -42,7 +43,7 @@ public static class WebhookClient
                 }
 
                 await SendStatusAsync(status);
-                await Task.Delay(100); // Small delay between requests
+                await Task.Delay(100);
             }
         }
         finally
@@ -64,13 +65,13 @@ public static class WebhookClient
 
         try
         {
-            _client.DefaultRequestHeaders.Clear();
-            _client.DefaultRequestHeaders.Add("Authorization", $"Bearer {PelipajaConfig.ApiSecret}");
             var json = JsonSerializer.Serialize(new { status });
-            var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+            using var content = new StringContent(json, System.Text.Encoding.UTF8, _jsonMediaType);
+            using var request = new HttpRequestMessage(HttpMethod.Post, $"{webhookUrl}/api/matches/{matchId}/status");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", PelipajaConfig.ApiSecret);
+            request.Content = content;
 
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-            await _client.PostAsync($"{webhookUrl}/api/matches/{matchId}/status", content, cts.Token);
+            await _client.SendAsync(request);
             Console.WriteLine($"[Pelipaja] Posted status: {status}");
         }
         catch (OperationCanceledException)
