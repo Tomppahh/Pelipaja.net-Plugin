@@ -57,7 +57,10 @@ public static class EventBridge
         if (status != null && status != _lastSentStatus)
         {
             _lastSentStatus = status;
-            WebhookClient.PostStatus(status);
+            if (status == "finished")
+                WebhookClient.PostStatus(status, StatsProvider.GetStatsJson());
+            else
+                WebhookClient.PostStatus(status);
         }
     }
 

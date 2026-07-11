@@ -14,14 +14,17 @@ public static class WebhookClient
 
     private static readonly MediaTypeHeaderValue _jsonMediaType = new("application/json");
     private static readonly Queue<string> _statusQueue = new();
+    private static string? _statsPayload;
     private static bool _isProcessing = false;
     private static readonly object _queueLock = new();
 
-    public static void PostStatus(string status)
+    public static void PostStatus(string status, string? statsJson = null)
     {
         lock (_queueLock)
         {
             _statusQueue.Enqueue(status);
+            if (statsJson != null)
+                _statsPayload = statsJson;
         }
         _ = ProcessQueueAsync();
     }
@@ -65,7 +68,23 @@ public static class WebhookClient
 
         try
         {
-            var json = JsonSerializer.Serialize(new { status });
+            string json;
+            string? statsToSend = null;
+            lock (_queueLock)
+            {
+                statsToSend = _statsPayload;
+                _statsPayload = null;
+            }
+
+            if (statsToSend != null)
+            {
+                json = $"{{\"status\":\"{status}\",\"stats\":{statsToSend}}}";
+            }
+            else
+            {
+                json = JsonSerializer.Serialize(new { status });
+            }
+
             using var content = new StringContent(json, System.Text.Encoding.UTF8, _jsonMediaType);
             using var request = new HttpRequestMessage(HttpMethod.Post, $"{webhookUrl}/api/matches/{matchId}/status");
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", PelipajaConfig.ApiSecret);

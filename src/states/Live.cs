@@ -29,6 +29,8 @@ public class LiveState : BaseState
     {
         Console.WriteLine("Switched to Live state");
 
+        StatsProvider.OnMatchStart();
+
         Console.WriteLine("Executing Live cfg");
         Server.ExecuteCommand("exec MatchUp/live.cfg");
 
@@ -73,7 +75,7 @@ public class LiveState : BaseState
 
         Console.WriteLine($"Waiting for match end panel and cstv delay {delay}");
 
-    Utils.DelayedCall(TimeSpan.FromSeconds(delay), () =>
+        Utils.DelayedCall(TimeSpan.FromSeconds(delay), () =>
     {
         CstvManager.StopDemoRecording(scores);
 
@@ -81,7 +83,7 @@ public class LiveState : BaseState
         {
             // Next.js will destroy the container, no need to changelevel
             Console.WriteLine("[Pelipaja] Match finished, waiting for container shutdown");
-            WebhookClient.PostStatus("finished");
+            WebhookClient.PostStatus("finished", StatsProvider.GetStatsJson());
             return;
         }
 

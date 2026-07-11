@@ -72,33 +72,50 @@ public static class HttpServer
                 PropertyNameCaseInsensitive = true
             });
 
-        if (payload != null)
-        {
-            Console.WriteLine($"[Pelipaja] Config received for match {payload.MatchId}");
+            if (payload != null)
+            {
+                Console.WriteLine($"[Pelipaja] Config received for match {payload.MatchId}");
 
-            PelipajaConfig.SetMatchConfig(
-                payload.Mode,
-                payload.MatchId ?? "",
-                payload.OwnerSteamId,
-                payload.Team1 ?? new TeamInfo { Name = "Team 1" },
-                payload.Team2 ?? new TeamInfo { Name = "Team 2" }
-            );
+                PelipajaConfig.SetMatchConfig(
+                    payload.Mode,
+                    payload.MatchId ?? "",
+                    payload.OwnerSteamId,
+                    payload.Team1 ?? new TeamInfo { Name = "Team 1" },
+                    payload.Team2 ?? new TeamInfo { Name = "Team 2" }
+                );
 
-            Server.NextWorldUpdate(() => {
-                MatchConfig.SetMap(payload.Map);
-                MatchConfig.SetTeamSize(payload.TeamSize.ToString());
-                MatchConfig.SetKnife(payload.KnifeRound.ToString());
-                MatchConfig.StartMatch();
-            });
+                Server.NextWorldUpdate(() => {
+                    MatchConfig.SetMap(payload.Map);
+                    MatchConfig.SetTeamSize(payload.TeamSize.ToString());
+                    MatchConfig.SetKnife(payload.KnifeRound.ToString());
+                    MatchConfig.StartMatch();
+                });
+            }
+            res.StatusCode = 200;
         }
+        else if (req.HttpMethod == "GET" && req.Url?.AbsolutePath == "/stats")
+        {
+            var json = StatsProvider.GetStatsJson();
+            var buffer = System.Text.Encoding.UTF8.GetBytes(json);
+            res.ContentType = "application/json";
+            res.ContentLength64 = buffer.Length;
+            await res.OutputStream.WriteAsync(buffer, 0, buffer.Length);
+            res.StatusCode = 200;
+        }
+        else if (req.HttpMethod == "GET" && req.Url?.AbsolutePath == "/status")
+        {
+            var json = StatsProvider.GetMatchStatusJson();
+            var buffer = System.Text.Encoding.UTF8.GetBytes(json);
+            res.ContentType = "application/json";
+            res.ContentLength64 = buffer.Length;
+            await res.OutputStream.WriteAsync(buffer, 0, buffer.Length);
             res.StatusCode = 200;
         }
         else
         {
             res.StatusCode = 404;
         }
-                
-            
+
         res.Close();
     }
 }

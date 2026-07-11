@@ -215,6 +215,7 @@ public class MatchUp : BasePlugin
     public HookResult OnRoundEnd(EventRoundEnd @event, GameEventInfo info)
     {
         EventBridge.OnRoundEnd(@event);
+        StatsProvider.OnRoundEnd();
         StateMachine.GetCurrentState().OnRoundEnd(@event);
         return HookResult.Continue;
     }
@@ -272,6 +273,6 @@ public class MatchUp : BasePlugin
         }
 
         Server.PrintToChatAll($" {ChatColors.Red}Match set finished state by {player.PlayerName}!");
-        WebhookClient.PostStatus("finished");
+        WebhookClient.PostStatus("finished", StatsProvider.GetStatsJson());
     }
 }
