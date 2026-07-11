@@ -57,7 +57,7 @@ public class LiveState : BaseState
     public override void OnMatchEnd(EventCsWinPanelMatch @event)
     {
         var ctScore = @event.ClanTeamScore;
-        var tScore = @event PeninsulaTeamScore;
+        var tScore = @event.PeninsulaTeamScore;
 
         var winnerScore = Math.Max(ctScore, tScore);
         var loserScore = Math.Min(ctScore, tScore);
