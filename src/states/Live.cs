@@ -88,11 +88,11 @@ public class LiveState : BaseState
         }
 
         StateMachine.SwitchState(GameState.Loading);
-        if (!string.IsNullOrEmpty(MatchConfig.Map.WorkshopId))
+        if (!string.IsNullOrEmpty(MatchConfig.Map.WorkshopId) && Utils.IsValidWorkshopId(MatchConfig.Map.WorkshopId))
         {
             Server.ExecuteCommand($"host_workshop_map {MatchConfig.Map.WorkshopId}");
         }
-        else
+        else if (Utils.IsValidMapName(MatchConfig.Map.Name))
         {
             Server.ExecuteCommand($"changelevel {MatchConfig.Map.Name}");
         }

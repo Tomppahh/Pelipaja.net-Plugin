@@ -160,8 +160,10 @@ public static class MatchConfig
 
     public static bool SetMap(string? mapName, CCSPlayerController? player = null)
     {
-        if (mapName == null)
+        if (mapName == null || !Utils.IsValidMapName(mapName))
         {
+            if (player != null)
+                player.PrintToChat($" {ChatColors.Red}Invalid map name.");
             return false;
         }
 
@@ -234,13 +236,17 @@ public static class MatchConfig
         }
         else
         {
-            if (!string.IsNullOrEmpty(Map.WorkshopId))
+            if (!string.IsNullOrEmpty(Map.WorkshopId) && Utils.IsValidWorkshopId(Map.WorkshopId))
             {
                 Server.ExecuteCommand($"host_workshop_map {Map.WorkshopId}");
             }
-            else
+            else if (Utils.IsValidMapName(Map.Name))
             {
                 Server.ExecuteCommand($"changelevel {Map.Name}");
+            }
+            else
+            {
+                Console.WriteLine($"[Pelipaja] Invalid map name '{Map.Name}', cannot start match");
             }
         }
     }

@@ -55,7 +55,7 @@ public static class HttpServer
         var res = context.Response;
 
         var secret = (req.Headers["Authorization"] ?? "").Replace("Bearer ", "");
-        if (secret != PelipajaConfig.ApiSecret)
+        if (string.IsNullOrEmpty(PelipajaConfig.ApiSecret) || secret != PelipajaConfig.ApiSecret)
         {
             res.StatusCode = 401;
             res.Close();
@@ -83,6 +83,14 @@ public static class HttpServer
                     payload.Team1 ?? new TeamInfo { Name = "Team 1" },
                     payload.Team2 ?? new TeamInfo { Name = "Team 2" }
                 );
+
+                if (!Utils.IsValidMapName(payload.Map))
+                {
+                    Console.WriteLine($"[Pelipaja] Invalid map name '{payload.Map}', rejecting config");
+                    res.StatusCode = 400;
+                    res.Close();
+                    return;
+                }
 
                 Server.NextWorldUpdate(() => {
                     MatchConfig.SetMap(payload.Map);

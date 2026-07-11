@@ -55,7 +55,7 @@ public class MatchUp : BasePlugin
         {
             if (playerEntity.SteamID == 0) continue;
             sb.Clear();
-            sb.Append("kick ").Append(playerEntity.PlayerName);
+            sb.Append("kick \"").Append(Utils.SanitizePlayerName(playerEntity.PlayerName)).Append('"');
             Server.ExecuteCommand(sb.ToString());
         }
     }
@@ -228,11 +228,11 @@ public class MatchUp : BasePlugin
         Utils.DelayedCall(TimeSpan.FromSeconds(1), () =>
         {
             StateMachine.SwitchState(GameState.Loading);
-            if (!string.IsNullOrEmpty(MatchConfig.Map.WorkshopId))
+            if (!string.IsNullOrEmpty(MatchConfig.Map.WorkshopId) && Utils.IsValidWorkshopId(MatchConfig.Map.WorkshopId))
             {
                 Server.ExecuteCommand($"host_workshop_map {MatchConfig.Map.WorkshopId}");
             }
-            else
+            else if (Utils.IsValidMapName(MatchConfig.Map.Name))
             {
                 Server.ExecuteCommand($"changelevel {MatchConfig.Map.Name}");
             }

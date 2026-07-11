@@ -8,6 +8,29 @@ namespace MatchUp;
 
 public static class Utils
 {
+    private static readonly System.Text.RegularExpressions.Regex SafeMapName =
+        new(@"^[a-zA-Z0-9_\-]+$", System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    private static readonly System.Text.RegularExpressions.Regex SafeWorkshopId =
+        new(@"^[0-9]+$", System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    public static bool IsValidMapName(string? name) =>
+        !string.IsNullOrEmpty(name) && name.Length <= 64 && SafeMapName.IsMatch(name);
+
+    public static bool IsValidWorkshopId(string? id) =>
+        !string.IsNullOrEmpty(id) && id.Length <= 16 && SafeWorkshopId.IsMatch(id);
+
+    public static string SanitizePlayerName(string name)
+    {
+        var span = name.AsSpan();
+        var sb = new System.Text.StringBuilder(span.Length);
+        foreach (var c in span)
+        {
+            if (c is >= ' ' and <= '~' && c != ';' && c != '"' && c != '\'' && c != '\\')
+                sb.Append(c);
+        }
+        return sb.Length == 0 ? "Player" : sb.ToString();
+    }
     public static async void DelayedCall(TimeSpan delay, Action callback)
     {
         try

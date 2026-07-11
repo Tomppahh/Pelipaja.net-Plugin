@@ -15,7 +15,7 @@ public static class WebhookClient
     private static readonly MediaTypeHeaderValue _jsonMediaType = new("application/json");
     private static readonly Queue<string> _statusQueue = new();
     private static string? _statsPayload;
-    private static bool _isProcessing = false;
+    private static int _isProcessing;
     private static readonly object _queueLock = new();
 
     public static void PostStatus(string status, string? statsJson = null)
@@ -31,8 +31,7 @@ public static class WebhookClient
 
     private static async Task ProcessQueueAsync()
     {
-        if (_isProcessing) return;
-        _isProcessing = true;
+        if (Interlocked.CompareExchange(ref _isProcessing, 1, 0) != 0) return;
 
         try
         {
@@ -51,7 +50,7 @@ public static class WebhookClient
         }
         finally
         {
-            _isProcessing = false;
+            Interlocked.Exchange(ref _isProcessing, 0);
         }
     }
 
