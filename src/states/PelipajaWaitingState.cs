@@ -15,10 +15,6 @@ public class PelipajaWaitingState : BaseState
         if (PelipajaConfig.MatchStarted)
         {
             Console.WriteLine("[Pelipaja] Match already started, skipping PelipajaWaiting");
-            Utils.DelayedCall(TimeSpan.FromSeconds(1), () =>
-            {
-                StateMachine.SwitchState(GameState.ReadyUp);
-            });
             return;
         }
     }
