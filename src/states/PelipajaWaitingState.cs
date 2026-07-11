@@ -12,10 +12,13 @@ public class PelipajaWaitingState : BaseState
         // Workshop map loaded — config was already received and StartMatch() issued host_workshop_map.
         // We ended up here because LoadingState.OnMapStart() transitions to PelipajaWaiting for pelipaja mode.
         // Since the map is already loaded and config is set, go straight to ReadyUp.
-        if (PelipajaConfig.MatchStarted)
+        if (PelipajaConfig.Mode == "pelipaja" && !string.IsNullOrEmpty(PelipajaConfig.MatchId))
         {
-            Console.WriteLine("[Pelipaja] Match already started, skipping PelipajaWaiting");
-            return;
+            Console.WriteLine("[Pelipaja] Config already received, transitioning to ReadyUp");
+            Utils.DelayedCall(TimeSpan.FromSeconds(1), () =>
+            {
+                StateMachine.SwitchState(GameState.ReadyUp);
+            });
         }
     }
 
