@@ -20,6 +20,11 @@ public static class StatsProvider
             {
                 _cachedStatsJson = BuildStatsJson();
                 _cachedMatchStatusJson = BuildMatchStatusJson();
+                // Push the updated stats to the site on every round end so the
+                // match page updates instantly. Fired from a scheduled world-update
+                // tick (not the event handler) and sent on a background HTTP task,
+                // so this has no impact on the game thread or player experience.
+                WebhookClient.PostStatus("round_end", _cachedStatsJson);
             }
             catch (Exception e)
             {
