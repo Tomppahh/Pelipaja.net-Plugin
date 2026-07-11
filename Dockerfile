@@ -11,6 +11,6 @@ ENV CSSAPI_VERSION=${CSSAPI_VERSION}
 ENV METAMOD_VERSION=${METAMOD_VERSION}
 
 COPY matchup.sh /root/matchup.sh
-COPY bin/Release/net8.0/MatchUp.dll /tmp/MatchUp.dll
+COPY bin/Release/net10.0/MatchUp.dll /tmp/MatchUp.dll
 COPY MatchUp.csproj ./MatchUp.csproj
 RUN chmod +x /root/matchup.sh
