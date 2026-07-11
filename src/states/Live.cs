@@ -56,12 +56,15 @@ public class LiveState : BaseState
 
     public override void OnMatchEnd(EventCsWinPanelMatch @event)
     {
-        var ctScore = @event.ClanTeamScore;
-        var tScore = @event.PeninsulaTeamScore;
+        var ctScore = 0;
+        var tScore = 0;
+        foreach (var team in Utilities.FindAllEntitiesByDesignerName<CCSTeam>("cs_team_manager"))
+        {
+            if (team.TeamNum == (byte)CsTeam.CounterTerrorist) ctScore = team.Score;
+            else if (team.TeamNum == (byte)CsTeam.Terrorist) tScore = team.Score;
+        }
 
-        var winnerScore = Math.Max(ctScore, tScore);
-        var loserScore = Math.Min(ctScore, tScore);
-        var scores = $"[{winnerScore}-{loserScore}]";
+        var scores = $"[{Math.Max(ctScore, tScore)}-{Math.Min(ctScore, tScore)}]";
 
         EventBridge.OnMatchEnd(@event, ctScore, tScore);
 
