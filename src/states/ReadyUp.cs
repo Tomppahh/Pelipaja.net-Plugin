@@ -19,9 +19,6 @@ public class ReadyUpState : BaseState
         CommandActions["ur"] = (userid, _) => OnPlayerUnReady(userid);
         CommandActions["unready"] = (userid, _) => OnPlayerUnReady(userid);
         CommandActions["forceready"] = (_, _) => OnForceReady();
-
-        // Used for testing
-        CommandActions["bot_ct"] = (userid, _) => OnBotCt(userid);
     }
 
     public override void Enter(GameState oldState)
@@ -30,23 +27,6 @@ public class ReadyUpState : BaseState
 
         Console.WriteLine("Executing warmup cfg");
         Server.ExecuteCommand("exec MatchUp/warmup.cfg");
-
-        // Bot test mode: add bots and force-start after a short delay
-        if (MatchConfig.BotTestMode && MatchConfig.BotsPerTeam > 0)
-        {
-            Console.WriteLine($"[Pelipaja] Bot test mode active, adding {MatchConfig.BotsPerTeam} bots per team");
-            Utils.DelayedCall(TimeSpan.FromSeconds(2), () =>
-            {
-                for (var i = 0; i < MatchConfig.BotsPerTeam; i++)
-                {
-                    Server.ExecuteCommand("bot_add_ct");
-                    Server.ExecuteCommand("bot_add_t");
-                }
-                Console.WriteLine($"[Pelipaja] Added {MatchConfig.BotsPerTeam} bots per team, force-starting match");
-                Server.PrintToChatAll($" {ChatColors.Green}[Pelipaja] Bot test — starting match!");
-                StateMachine.SwitchState(MatchConfig.KnifeRound ? GameState.Knife : GameState.Live);
-            });
-        }
     }
 
     public override void Leave()
@@ -140,11 +120,5 @@ public class ReadyUpState : BaseState
     {
         Server.PrintToChatAll($" {ChatColors.Green}Forced ready! Starting match!");
         StateMachine.SwitchState(MatchConfig.KnifeRound ? GameState.Knife : GameState.Live);
-    }
-
-    // Used for testing
-    private static void OnBotCt(int _)
-    {
-        Server.ExecuteCommand("bot_add_ct");
     }
 }

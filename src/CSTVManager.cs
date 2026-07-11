@@ -77,7 +77,7 @@ public static class CstvManager
         {
             if (!File.Exists(filePath))
             {
-                Console.WriteLine($"[MatchUp] Demo file not found for upload: {filePath}");
+                Console.WriteLine($"[Pelipaja] Demo file not found for upload: {filePath}");
                 return;
             }
 
@@ -89,7 +89,7 @@ public static class CstvManager
                 ? blobUrl
                 : $"{blobUrl}?{MatchConfig.DemoUploadToken}";
 
-            Console.WriteLine($"[MatchUp] Uploading demo to Azure: {fileName}");
+            Console.WriteLine($"[Pelipaja] Uploading demo to Azure: {fileName}");
 
             await using var fileStream = File.OpenRead(filePath);
             using var content = new StreamContent(fileStream);
@@ -101,19 +101,19 @@ public static class CstvManager
             using var response = await HttpClient.SendAsync(request);
             if (response.IsSuccessStatusCode)
             {
-                Console.WriteLine($"[MatchUp] Demo uploaded successfully: {fileName}");
-                Console.WriteLine($"[MatchUp] Demo URL: {blobUrl}");
+                Console.WriteLine($"[Pelipaja] Demo uploaded successfully: {fileName}");
+                Console.WriteLine($"[Pelipaja] Demo URL: {blobUrl}");
             }
             else
             {
                 var body = await response.Content.ReadAsStringAsync();
                 Console.WriteLine(
-                    $"[MatchUp] Demo upload failed ({response.StatusCode}): {body}");
+                    $"[Pelipaja] Demo upload failed ({response.StatusCode}): {body}");
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[MatchUp] Demo upload error: {ex.Message}");
+            Console.WriteLine($"[Pelipaja] Demo upload error: {ex.Message}");
         }
     }
 

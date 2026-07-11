@@ -11,12 +11,12 @@ if [ -z "$CONTAINER" ]; then
   echo "Usage: $0 <container-name> [version]" >&2
   exit 2
 fi
-VERSION=${2:-v1.0.1}
+VERSION=${2:-latest}
 
-LOCAL_DLL=bin/Release/net8.0/MatchUp.dll
-REMOTE_ADDONS=/root/cs2-dedicated/game/csgo/addons
+LOCAL_DLL=bin/Release/net10.0/MatchUp.dll
+REMOTE_ADDONS=/root/cs2/game/csgo/addons
 REMOTE_PLUGIN_DIR="$REMOTE_ADDONS/counterstrikesharp/plugins/MatchUp"
-REMOTE_GAMEINFO=/root/cs2-dedicated/game/csgo/gameinfo.gi
+REMOTE_GAMEINFO=/root/cs2/game/csgo/gameinfo.gi
 REMOTE_MARKER="$REMOTE_ADDONS/matchup_version_${VERSION}"
 GAMEINFO_INSERT_LINE=$'\t\t\tGame\tcsgo/addons/metamod'
 

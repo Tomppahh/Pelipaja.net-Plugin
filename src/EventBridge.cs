@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Events;
@@ -134,8 +133,5 @@ public static class EventBridge
         Print("BACKUP_RESTORE", $"{{\"admin\":\"{EscapeJson(adminName)}\",\"round\":{round}}}");
     }
 
-    private static string EscapeJson(string s)
-    {
-        return s.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", "\\r").Replace("\t", "\\t");
-    }
+    private static string EscapeJson(string s) => Utils.EscapeJson(s);
 }

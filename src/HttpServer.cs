@@ -109,19 +109,7 @@ public static class HttpServer
                         Console.WriteLine($"[Pelipaja] Workshop map ID: {payload.WorkshopId}");
                     }
                     MatchConfig.SetTeamSize(payload.TeamSize.ToString());
-                    if (payload.BotTestMode)
-                    {
-                        Console.WriteLine($"[Pelipaja] Bot test mode: {payload.BotsPerTeam} bots per team");
-                        MatchConfig.BotTestMode = true;
-                        MatchConfig.BotsPerTeam = payload.BotsPerTeam;
-                        MatchConfig.SetKnife("false");
-                    }
-                    else
-                    {
-                        MatchConfig.BotTestMode = false;
-                        MatchConfig.BotsPerTeam = 0;
-                        MatchConfig.SetKnife(payload.KnifeRound.ToString());
-                    }
+                    MatchConfig.SetKnife(payload.KnifeRound.ToString());
                     MatchConfig.StartMatch();
                 });
             }
@@ -193,8 +181,6 @@ public class MatchConfigPayload
     public TeamInfo? Team1 { get; set; }
     public TeamInfo? Team2 { get; set; }
     public string? OwnerSteamId { get; set; }
-    public bool BotTestMode { get; set; }
-    public int BotsPerTeam { get; set; }
 }
 
 public class AddBotsPayload

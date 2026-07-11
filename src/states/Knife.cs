@@ -13,10 +13,9 @@ public class KnifeState : BaseState
     {
         CommandActions["stay"] = (userid, _) => OnStay(userid);
         CommandActions["switch"] = (userid, _) => OnSwitch(userid);
-
-        // Used for testing
         CommandActions["kill"] = (userid, _) => OnPlayerSuicide(userid);
         CommandActions["bot_ct"] = (userid, _) => OnBotCt(userid);
+        CommandActions["bot_t"] = (userid, _) => OnBotT(userid);
     }
 
     public override void Enter(GameState oldState)
@@ -83,21 +82,21 @@ public class KnifeState : BaseState
         }
     }
 
-
-    // Used for testing
-    private static void OnPlayerSuicide(int userid)
-    {
-        var player = Utilities.GetPlayerFromUserid(userid);
-
-        if (player == null || !player.IsValid || player.PlayerPawn.Value == null || !player.PlayerPawn.IsValid)
-            return;
-
-        player.PlayerPawn.Value.CommitSuicide(true, false);
-    }
-
-    // Used for testing
     private static void OnBotCt(int _)
     {
         Server.ExecuteCommand("bot_add_ct");
+    }
+
+    private static void OnBotT(int _)
+    {
+        Server.ExecuteCommand("bot_add_t");
+    }
+
+    private static void OnPlayerSuicide(int userid)
+    {
+        var player = Utilities.GetPlayerFromUserid(userid);
+        if (player == null || !player.IsValid || player.PlayerPawn.Value == null || !player.PlayerPawn.IsValid)
+            return;
+        player.PlayerPawn.Value.CommitSuicide(true, false);
     }
 }

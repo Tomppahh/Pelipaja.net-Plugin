@@ -88,13 +88,13 @@ public class MatchUp : BasePlugin
     [ConsoleCommand("matchup_version", "Prints the current version of MatchUp")]
     public void OnVersion(CCSPlayerController? player, CommandInfo command)
     {
-        command.ReplyToCommand($"MatchUp version {ModuleVersion}");
+        command.ReplyToCommand($"Pelipaja version {ModuleVersion}");
     }
 
     [ConsoleCommand("matchup_status", "Prints match status as JSON")]
     public void OnMatchStatus(CCSPlayerController? player, CommandInfo command)
     {
-        command.ReplyToCommand($"\n{Utils.GetMatchStatusJson() ?? "No match status available"}\n");
+        command.ReplyToCommand($"\n{StatsProvider.GetMatchStatusJson()}\n");
     }
 
     [ConsoleCommand("matchup_demo", "Prints the demo recording and upload status")]
@@ -217,6 +217,15 @@ public class MatchUp : BasePlugin
         EventBridge.OnRoundEnd(@event);
         StatsProvider.OnRoundEnd();
         StateMachine.GetCurrentState().OnRoundEnd(@event);
+        return HookResult.Continue;
+    }
+
+    [GameEventHandler]
+    public HookResult OnPlayerDeath(EventPlayerDeath @event, GameEventInfo info)
+    {
+        var attacker = @event.Attacker;
+        var victim = @event.Userid;
+        StatsProvider.OnPlayerDeath(attacker, victim);
         return HookResult.Continue;
     }
 

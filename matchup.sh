@@ -6,12 +6,12 @@ gameinfo=$base_folder/gameinfo.gi
 gameinfo_insert_line='          Game    csgo/addons/metamod'
 
 install_metamod() {
-  local version=${METAMOD_VERSION:-1403}
+  local version=${METAMOD_VERSION:?METAMOD_VERSION not set}
   local marker="$addons_folder/metamod_installed_$version"
   if [ ! -f "$marker" ]; then
     echo "Installing Metamod $version..."
     wget -q "https://github.com/alliedmodders/metamod-source/releases/download/2.0.0.${version}/mmsource-2.0.0-git${version}-linux.tar.gz" -O /tmp/metamod.tar.gz
-    cd "$base_folder"
+    cd "$base_folder" || exit 1
     tar -xzf /tmp/metamod.tar.gz
     rm /tmp/metamod.tar.gz
     touch "$marker"
@@ -22,12 +22,12 @@ install_metamod() {
 }
 
 install_css() {
-  local version=${CSSAPI_VERSION:-1.0.367}
+  local version=${CSSAPI_VERSION:?CSSAPI_VERSION not set}
   local marker="$addons_folder/counterstrikesharp/css_installed_$version"
   if [ ! -f "$marker" ]; then
     echo "Installing CounterStrikeSharp $version..."
     wget -q "https://github.com/roflmuffin/CounterStrikeSharp/releases/download/v${version}/counterstrikesharp-with-runtime-linux-${version}.zip" -O /tmp/css.zip
-    cd "$base_folder"
+    cd "$base_folder" || exit 1
     unzip -o /tmp/css.zip
     rm /tmp/css.zip
     mkdir -p "$addons_folder/counterstrikesharp"
@@ -52,13 +52,9 @@ update_gameinfo() {
   fi
 }
 
-if [ ! -z $1 ]; then
-  $1
-else
-  $setup install_and_update
-  install_metamod
-  install_css
-  install_pelipaja
-  update_gameinfo
-  exec $setup start
-fi
+$setup install_and_update
+install_metamod
+install_css
+install_pelipaja
+update_gameinfo
+exec $setup start

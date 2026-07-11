@@ -11,9 +11,38 @@ public static class StatsProvider
     private static string _cachedMatchStatusJson = "{}";
     private static int _roundNumber;
 
+    // Entry kill tracking (minimal overhead: bool + dictionary lookup per kill)
+    private static bool _entryKillRecorded;
+    private static readonly Dictionary<ulong, int> _entryKills = new();
+    private static readonly Dictionary<ulong, int> _entryDeaths = new();
+
+    public static void OnRoundStart()
+    {
+        _entryKillRecorded = false;
+    }
+
+    public static void OnPlayerDeath(CCSPlayerController? attacker, CCSPlayerController? victim)
+    {
+        if (_entryKillRecorded) return;
+        if (attacker == null || !attacker.IsValid || victim == null || !victim.IsValid) return;
+        if (attacker.SteamID == 0 || victim.SteamID == 0) return;
+        if (attacker.TeamNum == victim.TeamNum) return; // teamkill, not an entry
+
+        _entryKillRecorded = true;
+
+        if (!_entryKills.ContainsKey(attacker.SteamID))
+            _entryKills[attacker.SteamID] = 0;
+        _entryKills[attacker.SteamID]++;
+
+        if (!_entryDeaths.ContainsKey(victim.SteamID))
+            _entryDeaths[victim.SteamID] = 0;
+        _entryDeaths[victim.SteamID]++;
+    }
+
     public static void OnRoundEnd()
     {
         _roundNumber++;
+        _entryKillRecorded = false;
         Server.NextWorldUpdate(() =>
         {
             try
@@ -62,7 +91,7 @@ public static class StatsProvider
         var first = true;
         foreach (var p in Utilities.FindAllEntitiesByDesignerName<CCSPlayerController>("cs_player_controller"))
         {
-            if (!p.IsValid || (p.SteamID == 0 && !MatchConfig.BotTestMode)) continue;
+            if (!p.IsValid || p.SteamID == 0) continue;
 
             if (!first) sb.Append(',');
             first = false;
@@ -97,6 +126,8 @@ public static class StatsProvider
                 sb.Append(",\"shotsOnTarget\":").Append(stats.ShotsOnTargetTotal);
                 sb.Append(",\"totalDamage\":").Append(stats.Damage);
                 sb.Append(",\"entryCount\":").Append(stats.EntryCount);
+                sb.Append(",\"entryKills\":").Append(_entryKills.TryGetValue(p.SteamID, out var ek) ? ek : 0);
+                sb.Append(",\"entryDeaths\":").Append(_entryDeaths.TryGetValue(p.SteamID, out var ed) ? ed : 0);
                 sb.Append(",\"oneVoneCount\":").Append(stats.I1v1Count);
                 sb.Append(",\"oneVoneWins\":").Append(stats.I1v1Wins);
             }
@@ -132,7 +163,7 @@ public static class StatsProvider
         var first = true;
         foreach (var p in Utilities.FindAllEntitiesByDesignerName<CCSPlayerController>("cs_player_controller"))
         {
-            if (!p.IsValid || (p.SteamID == 0 && !MatchConfig.BotTestMode)) continue;
+            if (!p.IsValid || p.SteamID == 0) continue;
 
             if (!first) sb.Append(',');
             first = false;
@@ -157,8 +188,5 @@ public static class StatsProvider
         return sb.ToString();
     }
 
-    private static string EscapeJson(string s)
-    {
-        return s.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", "\\r").Replace("\t", "\\t");
-    }
+    private static string EscapeJson(string s) => Utils.EscapeJson(s);
 }

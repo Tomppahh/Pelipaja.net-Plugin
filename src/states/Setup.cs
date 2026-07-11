@@ -64,7 +64,7 @@ public class SetupState : BaseState
             return;
         }
 
-        player.PrintToChat($" {ChatColors.Yellow}MatchUp Commands:");
+        player.PrintToChat($" {ChatColors.Yellow}Pelipaja Commands:");
         player.PrintToChat($" {ChatColors.Green}!map {ChatColors.Default}select map for match");
         player.PrintToChat($" {ChatColors.Green}!start {ChatColors.Default}start match with current config");
         player.PrintToChat($" {ChatColors.Green}!config {ChatColors.Default}print current match config");
@@ -80,7 +80,7 @@ public class SetupState : BaseState
             return;
         }
 
-        player.PrintToChat($" {ChatColors.Green}MatchUp version {MatchUp.Version}");
+        player.PrintToChat($" {ChatColors.Green}Pelipaja version {MatchUp.Version}");
     }
 
     private static void OnDemo(int userid)
