@@ -14,6 +14,8 @@ public static class MatchConfig
 {
     public static int PlayersPerTeam { get; private set; } = 5;
     public static bool KnifeRound { get; private set; } = true;
+    public static bool BotTestMode { get; set; }
+    public static int BotsPerTeam { get; set; }
     public static MapInfo[] MapPool { get; private set; } = [];
     public static Dictionary<string, string> Settings { get; } = new();
 

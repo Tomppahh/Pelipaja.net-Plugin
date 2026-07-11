@@ -100,7 +100,19 @@ public static class HttpServer
                         Console.WriteLine($"[Pelipaja] Workshop map ID: {payload.WorkshopId}");
                     }
                     MatchConfig.SetTeamSize(payload.TeamSize.ToString());
-                    MatchConfig.SetKnife(payload.KnifeRound.ToString());
+                    if (payload.BotTestMode)
+                    {
+                        Console.WriteLine($"[Pelipaja] Bot test mode: {payload.BotsPerTeam} bots per team");
+                        MatchConfig.BotTestMode = true;
+                        MatchConfig.BotsPerTeam = payload.BotsPerTeam;
+                        MatchConfig.SetKnife("false");
+                    }
+                    else
+                    {
+                        MatchConfig.BotTestMode = false;
+                        MatchConfig.BotsPerTeam = 0;
+                        MatchConfig.SetKnife(payload.KnifeRound.ToString());
+                    }
                     MatchConfig.StartMatch();
                 });
             }
@@ -124,6 +136,34 @@ public static class HttpServer
             await res.OutputStream.WriteAsync(buffer, 0, buffer.Length);
             res.StatusCode = 200;
         }
+        else if (req.HttpMethod == "POST" && req.Url?.AbsolutePath == "/add_bots")
+        {
+            using var reader = new StreamReader(req.InputStream);
+            var body = await reader.ReadToEndAsync();
+            var payload = JsonSerializer.Deserialize<AddBotsPayload>(body, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            if (payload == null || payload.Count < 1)
+            {
+                res.StatusCode = 400;
+                res.Close();
+                return;
+            }
+
+            var count = Math.Min(payload.Count, 10);
+            Server.NextWorldUpdate(() =>
+            {
+                for (var i = 0; i < count; i++)
+                {
+                    Server.ExecuteCommand("bot_add_ct");
+                    Server.ExecuteCommand("bot_add_t");
+                }
+                Console.WriteLine($"[Pelipaja] Added {count} bots per team");
+            });
+            res.StatusCode = 200;
+        }
         else
         {
             res.StatusCode = 404;
@@ -144,4 +184,11 @@ public class MatchConfigPayload
     public TeamInfo? Team1 { get; set; }
     public TeamInfo? Team2 { get; set; }
     public string? OwnerSteamId { get; set; }
+    public bool BotTestMode { get; set; }
+    public int BotsPerTeam { get; set; }
+}
+
+public class AddBotsPayload
+{
+    public int Count { get; set; } = 5;
 }
