@@ -76,7 +76,7 @@ jobs:
       - name: Get current Metamod version
         id: current_mm
         run: |
-          CURRENT=$(grep -oP 'METAMOD_VERSION=\K[0-9]+' matchup.sh)
+          CURRENT=$(grep -oP 'METAMOD_VERSION=\K[0-9]+' Dockerfile)
           echo "version=$CURRENT" >> "$GITHUB_OUTPUT"
           echo "Current Metamod version: $CURRENT"
 
