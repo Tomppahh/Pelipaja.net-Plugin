@@ -55,6 +55,13 @@ public static class Utils
         };
     }
 
+    public static bool IsAimMap()
+    {
+        // Check Server.MapName first (available after map load).
+        // Fall back to MatchConfig.Map.Name (available before map load, set by SetMap()).
+        return Server.MapName.StartsWith("aim_") || MatchConfig.Map.Name.StartsWith("aim_");
+    }
+
     public static string EscapeJson(string s)
     {
         return s.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", "\\r").Replace("\t", "\\t");

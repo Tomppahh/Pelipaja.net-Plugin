@@ -31,7 +31,9 @@ public class LiveState : BaseState
         StatsProvider.OnMatchStart();
 
         Console.WriteLine("Executing Live cfg");
-        Server.ExecuteCommand("exec MatchUp/live.cfg");
+        Server.ExecuteCommand(Utils.IsAimMap()
+            ? "exec MatchUp/live_aim.cfg"
+            : "exec MatchUp/live.cfg");
 
         Server.ExecuteCommand("mp_restartgame 3");
 

@@ -26,7 +26,9 @@ public class ReadyUpState : BaseState
         Console.WriteLine("Switched to ReadyUp state");
 
         Console.WriteLine("Executing warmup cfg");
-        Server.ExecuteCommand("exec MatchUp/warmup.cfg");
+        Server.ExecuteCommand(Utils.IsAimMap()
+            ? "exec MatchUp/warmup_aim.cfg"
+            : "exec MatchUp/warmup.cfg");
     }
 
     public override void Leave()
