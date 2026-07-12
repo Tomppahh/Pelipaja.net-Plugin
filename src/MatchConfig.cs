@@ -219,6 +219,13 @@ public static class MatchConfig
 
         KnifeRound = parsedKnifeRound;
 
+        // Aim maps handle their own setup — knife round conflicts with that
+        if (Utils.IsAimMap())
+        {
+            KnifeRound = false;
+            Console.WriteLine("[MatchUp] Aim map detected — knife round disabled automatically");
+        }
+
         return true;
     }
 
