@@ -1,0 +1,63 @@
+name: Check for Updates
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check CSS version
+        id: css
+        run: |
+          CURRENT=$(grep -oP 'Version>\K[^<]+' MatchUp.csproj)
+          TFM=$(grep -oP 'TargetFramework>\K[^<]+' MatchUp.csproj)
+
+          VERSIONS=$(curl -sf "https://api.nuget.org/v3-flatcontainer/counterstrikesharp.api/index.json" | jq -r '[.versions[] | select(test("alpha|beta|rc") | not)] | reverse | .[]')
+
+          LATEST=""
+          for V in $VERSIONS; do
+            NUSPEC=$(curl -sf "https://api.nuget.org/v3-flatcontainer/counterstrikesharp.api/$V/counterstrikesharp.api.nuspec")
+            if echo "$NUSPEC" | grep -q "targetFramework=\"$TFM\""; then
+              LATEST="$V"
+              break
+            fi
+          done
+
+          echo "current=$CURRENT"
+          echo "latest=$LATEST"
+          if [ "$CURRENT" != "$LATEST" ] && [ -n "$LATEST" ]; then
+            echo "update=true" >> "$GITHUB_OUTPUT"
+            echo "CSS update available: $CURRENT -> $LATEST"
+          else
+            echo "update=false" >> "$GITHUB_OUTPUT"
+            echo "CSS up to date."
+          fi
+
+      - name: Check Metamod version
+        id: mm
+        run: |
+          CURRENT=$(grep -oP 'METAMOD_VERSION=\K[0-9]+' Dockerfile)
+          LATEST=$(curl -sf -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/alliedmodders/metamod-source/releases" | jq -r '[.[] | select(.tag_name | startswith("2.0.0."))][0].tag_name' | sed 's/2.0.0.//')
+
+          echo "current=$CURRENT"
+          echo "latest=$LATEST"
+          if [ "$CURRENT" != "$LATEST" ] && [ -n "$LATEST" ] && [ "$LATEST" != "null" ]; then
+            echo "update=true" >> "$GITHUB_OUTPUT"
+            echo "Metamod update available: $CURRENT -> $LATEST"
+          else
+            echo "update=false" >> "$GITHUB_OUTPUT"
+            echo "Metamod up to date."
+          fi
+
+      - name: Trigger build
+        if: steps.css.outputs.update == 'true' || steps.mm.outputs.update == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Update detected, triggering build workflow..."
+          gh workflow run "Auto-Update CSS & Metamod" --ref main

@@ -1,8 +1,6 @@
 name: Auto-Update CSS & Metamod
 
 on:
-  schedule:
-    - cron: '0 */3 * * *'
   workflow_dispatch:
 
 jobs:
@@ -23,13 +21,17 @@ jobs:
         id: current_css
         run: |
           CURRENT=$(dotnet list MatchUp.csproj package --format json | jq -r '.projects[0].frameworks.[0].topLevelPackages[] | select(.id == "CounterStrikeSharp.API") | .requestedVersion')
+          if [ -z "$CURRENT" ] || [ "$CURRENT" = "null" ]; then
+            echo "::error::Failed to read current CSS version from csproj"
+            exit 1
+          fi
           echo "version=$CURRENT" >> "$GITHUB_OUTPUT"
           echo "Current CSS version: $CURRENT"
 
       - name: Get target framework
         id: tfm
         run: |
-          TFM=$(cat MatchUp.csproj | grep -oP 'TargetFramework>\K[^<]+')
+          TFM=$(grep -oP 'TargetFramework>\K[^<]+' MatchUp.csproj)
           echo "tfm=$TFM" >> "$GITHUB_OUTPUT"
           echo "Target framework: $TFM"
 
@@ -37,11 +39,16 @@ jobs:
         id: latest_css
         run: |
           TFM="${{ steps.tfm.outputs.tfm }}"
-          VERSIONS=$(curl -s "https://api.nuget.org/v3-flatcontainer/counterstrikesharp.api/index.json" | jq -r '[.versions[] | select(test("alpha|beta|rc") | not)] | reverse | .[]')
+          VERSIONS=$(curl -sf "https://api.nuget.org/v3-flatcontainer/counterstrikesharp.api/index.json" | jq -r '[.versions[] | select(test("alpha|beta|rc") | not)] | reverse | .[]')
+
+          if [ -z "$VERSIONS" ]; then
+            echo "::error::Failed to fetch CSS version list from NuGet"
+            exit 1
+          fi
 
           LATEST=""
           for V in $VERSIONS; do
-            NUSPEC=$(curl -s "https://api.nuget.org/v3-flatcontainer/counterstrikesharp.api/$V/counterstrikesharp.api.nuspec")
+            NUSPEC=$(curl -sf "https://api.nuget.org/v3-flatcontainer/counterstrikesharp.api/$V/counterstrikesharp.api.nuspec")
             if echo "$NUSPEC" | grep -q "targetFramework=\"$TFM\""; then
               LATEST="$V"
               break
@@ -49,7 +56,7 @@ jobs:
           done
 
           if [ -z "$LATEST" ]; then
-            echo "No compatible version found for $TFM"
+            echo "::error::No compatible CSS version found for $TFM"
             exit 1
           fi
 
@@ -77,13 +84,21 @@ jobs:
         id: current_mm
         run: |
           CURRENT=$(grep -oP 'METAMOD_VERSION=\K[0-9]+' Dockerfile)
+          if [ -z "$CURRENT" ]; then
+            echo "::error::Failed to read Metamod version from Dockerfile"
+            exit 1
+          fi
           echo "version=$CURRENT" >> "$GITHUB_OUTPUT"
           echo "Current Metamod version: $CURRENT"
 
       - name: Get latest Metamod version
         id: latest_mm
         run: |
-          LATEST=$(curl -s "https://api.github.com/repos/alliedmodders/metamod-source/releases" | jq -r '[.[] | select(.tag_name | startswith("2.0.0."))][0].tag_name' | sed 's/2.0.0.//')
+          LATEST=$(curl -sf -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/alliedmodders/metamod-source/releases" | jq -r '[.[] | select(.tag_name | startswith("2.0.0."))][0].tag_name' | sed 's/2.0.0.//')
+          if [ -z "$LATEST" ] || [ "$LATEST" = "null" ]; then
+            echo "::error::Failed to fetch latest Metamod version from GitHub"
+            exit 1
+          fi
           echo "version=$LATEST" >> "$GITHUB_OUTPUT"
           echo "Latest Metamod version: $LATEST"
 
@@ -101,7 +116,6 @@ jobs:
       - name: Update Metamod version
         if: steps.compare_mm.outputs.up_to_date == 'false'
         run: |
-          sed -i "s/METAMOD_VERSION=${{ steps.current_mm.outputs.version }}/METAMOD_VERSION=${{ steps.latest_mm.outputs.version }}/" matchup.sh
           sed -i "s/ARG METAMOD_VERSION=${{ steps.current_mm.outputs.version }}/ARG METAMOD_VERSION=${{ steps.latest_mm.outputs.version }}/" Dockerfile
 
       # ── Build & push ────────────────────────────────────────────────────
@@ -155,9 +169,14 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add MatchUp.csproj matchup.sh Dockerfile
+          git add MatchUp.csproj Dockerfile
           MSG="chore: "
-          [ "${{ steps.compare_css.outputs.up_to_date }}" = "false" ] && MSG="${MSG}update CSS to ${{ steps.latest_css.outputs.version }}"
-          [ "${{ steps.compare_mm.outputs.up_to_date }}" = "false" ] && MSG="${MSG}update Metamod to ${{ steps.latest_mm.outputs.version }}"
+          if [ "${{ steps.compare_css.outputs.up_to_date }}" = "false" ]; then
+            MSG="${MSG}update CSS to ${{ steps.latest_css.outputs.version }}"
+          fi
+          if [ "${{ steps.compare_mm.outputs.up_to_date }}" = "false" ]; then
+            MSG="${MSG}update Metamod to ${{ steps.latest_mm.outputs.version }}"
+          fi
+          git diff --cached --quiet && echo "No changes to commit" && exit 0
           git commit -m "$MSG"
           git push

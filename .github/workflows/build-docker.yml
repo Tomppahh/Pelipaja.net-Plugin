@@ -16,7 +16,7 @@ jobs:
         run: |
           TFM=$(grep -oP 'TargetFramework>\K[^<]+' MatchUp.csproj)
           CSS=$(dotnet list MatchUp.csproj package --format json | jq -r '.projects[0].frameworks.[0].topLevelPackages[] | select(.id == "CounterStrikeSharp.API") | .requestedVersion')
-          MM=$(grep -oP 'METAMOD_VERSION=\K[0-9]+' matchup.sh || echo "1403")
+          MM=$(grep -oP 'METAMOD_VERSION=\K[0-9]+' Dockerfile)
           echo "tfm=$TFM" >> "$GITHUB_OUTPUT"
           echo "css=$CSS" >> "$GITHUB_OUTPUT"
           echo "metamod=$MM" >> "$GITHUB_OUTPUT"
