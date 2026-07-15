@@ -57,9 +57,10 @@ public static class Utils
 
     public static bool IsAimMap()
     {
-        // Check Server.MapName first (available after map load).
-        // Fall back to MatchConfig.Map.Name (available before map load, set by SetMap()).
-        return Server.MapName.StartsWith("aim_") || MatchConfig.Map.Name.StartsWith("aim_");
+        // Only check MatchConfig.Map.Name which is explicitly set by the config payload.
+        // Server.MapName is unreliable during state transitions (map changes) and can
+        // briefly reflect the previous map, causing the wrong config to be executed.
+        return MatchConfig.Map.Name.StartsWith("aim_");
     }
 
     public static string EscapeJson(string s)
