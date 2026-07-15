@@ -37,12 +37,31 @@ public abstract class BaseState
         {
             player.ChangeTeam(CsTeam.Terrorist);
             player.PrintToChat($" {ChatColors.Green}You have been assigned to {PelipajaConfig.Team1.Name}");
+            RespawnIfNoPawn(player);
         }
         else if (PelipajaConfig.Team2?.Players.Contains(steamId) == true)
         {
             player.ChangeTeam(CsTeam.CounterTerrorist);
             player.PrintToChat($" {ChatColors.Green}You have been assigned to {PelipajaConfig.Team2.Name}");
+            RespawnIfNoPawn(player);
         }
+    }
+
+    // ChangeTeam does not spawn a pawn — a player assigned to a team on connect
+    // would sit at the map origin (underground) until the next round/warmup respawn.
+    // Respawn them shortly after the team change so they spawn in alive.
+    private static void RespawnIfNoPawn(CCSPlayerController player)
+    {
+        if (player == null || !player.IsValid || player.Pawn.IsValid) return;
+
+        Utils.DelayedCall(TimeSpan.FromSeconds(0.2), () =>
+        {
+            if (player.IsValid && !player.Pawn.IsValid &&
+                (player.TeamNum == (byte)CsTeam.Terrorist || player.TeamNum == (byte)CsTeam.CounterTerrorist))
+            {
+                player.Respawn();
+            }
+        });
     }
 
     public virtual void OnMatchEnd(EventCsWinPanelMatch @event) { }
