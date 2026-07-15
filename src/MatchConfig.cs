@@ -89,6 +89,17 @@ public static class MatchConfig
 
     private static void InitializeCurrentMap()
     {
+        // The web-app passes the chosen map via the STARTING_MAP env var
+        // (e.g. the map-veto result). Prefer it as the authoritative map so
+        // the physical server map matches the lobby's selected map from the start,
+        // instead of whatever default map the container launched with.
+        var startingMap = Environment.GetEnvironmentVariable("STARTING_MAP");
+        if (!string.IsNullOrEmpty(startingMap) && Utils.IsValidMapName(startingMap))
+        {
+            Map = new MapInfo { Name = startingMap };
+            return;
+        }
+
         // Try to find the current map in the pool to preserve workshop ID if applicable
         var currentMapName = Server.MapName;
 

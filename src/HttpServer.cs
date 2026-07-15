@@ -100,8 +100,8 @@ public static class HttpServer
                     res.Close();
                     return;
                 }
-
-                Server.NextWorldUpdate(() => {
+                Server.NextWorldUpdate(() =>
+                {
                     MatchConfig.SetMap(payload.Map);
                     if (!string.IsNullOrEmpty(payload.WorkshopId) && Utils.IsValidWorkshopId(payload.WorkshopId))
                     {
@@ -111,6 +111,19 @@ public static class HttpServer
                     MatchConfig.SetTeamSize(payload.TeamSize.ToString());
                     MatchConfig.SetKnife(payload.KnifeRound.ToString());
                     MatchConfig.StartMatch();
+
+                    // Apply the chosen map to the live server immediately so the
+                    // physical server map matches the lobby's selected map (e.g. the
+                    // map-veto result) instead of the container's launch/default
+                    // map. Live.cs also re-applies it on match start.
+                    if (!string.IsNullOrEmpty(MatchConfig.Map.WorkshopId) && Utils.IsValidWorkshopId(MatchConfig.Map.WorkshopId))
+                    {
+                        Server.ExecuteCommand($"host_workshop_map {MatchConfig.Map.WorkshopId}");
+                    }
+                    else if (Utils.IsValidMapName(MatchConfig.Map.Name) && Server.MapName != MatchConfig.Map.Name)
+                    {
+                        Server.ExecuteCommand($"changelevel {MatchConfig.Map.Name}");
+                    }
                 });
             }
             res.StatusCode = 200;
