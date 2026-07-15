@@ -46,7 +46,7 @@ public static class MatchConfig
         {
             Console.WriteLine("Using map pool from MATCHUP_MAPS env variable");
             MapPool = envMaps.Split(",").Select(ParseMapString).ToArray();
-            InitializeCurrentMap();
+            InitializeCurrentMapIfNeeded();
             return;
         }
 
@@ -56,12 +56,24 @@ public static class MatchConfig
             Console.WriteLine("Using map pool from maps.txt");
             var mapsRaw = File.ReadLines(mapFile);
             MapPool = mapsRaw.Where(l => !string.IsNullOrWhiteSpace(l)).Select(ParseMapString).ToArray();
-            InitializeCurrentMap();
+            InitializeCurrentMapIfNeeded();
             return;
         }
 
         Console.WriteLine("Using default map pool");
         MapPool = DefaultMapPool;
+        InitializeCurrentMapIfNeeded();
+    }
+
+    // Derives the current map from the server's loaded map. In pelipaja mode the
+    // match map is set authoritatively by the web-app config (SetMap), so never
+    // let the server's transient/previous physical map clobber it during async
+    // workshop/map loading — that caused the wrong live/aim config to deploy.
+    private static void InitializeCurrentMapIfNeeded()
+    {
+        if (PelipajaConfig.Mode == "pelipaja" && !string.IsNullOrEmpty(PelipajaConfig.MatchId))
+            return;
+
         InitializeCurrentMap();
     }
 
