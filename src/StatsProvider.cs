@@ -111,7 +111,7 @@ public static class StatsProvider
             var stats = p.ActionTrackingServices?.MatchStats;
 
             sb.Append('{');
-            sb.Append("\"steamId\":").Append(p.SteamID == 0 ? -(int)p.Index - 1 : (long)p.SteamID);
+            sb.Append("\"steamId\":\"").Append(p.SteamID == 0 ? -(int)p.Index - 1 : (long)p.SteamID).Append('"');
             sb.Append(",\"name\":\"").Append(EscapeJson(p.PlayerName)).Append('"');
             sb.Append(",\"isBot\":").Append(p.IsBot.ToString().ToLower());
             sb.Append(",\"team\":\"").Append(side).Append('"');
