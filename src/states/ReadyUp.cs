@@ -51,6 +51,8 @@ public class ReadyUpState : BaseState
 
     public override void OnPlayerConnect(EventPlayerConnectFull @event)
     {
+        base.OnPlayerConnect(@event);
+
         var player = @event.Userid;
         if (player != null)
         {
