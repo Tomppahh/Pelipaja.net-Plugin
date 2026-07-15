@@ -14,7 +14,7 @@ jobs:
       - name: Check CSS version
         id: css
         run: |
-          CURRENT=$(grep -oP 'Version>\K[^<]+' MatchUp.csproj)
+          CURRENT=$(grep -oP 'CounterStrikeSharp\.API" Version="\K[^"]+' MatchUp.csproj)
           TFM=$(grep -oP 'TargetFramework>\K[^<]+' MatchUp.csproj)
 
           VERSIONS=$(curl -sf "https://api.nuget.org/v3-flatcontainer/counterstrikesharp.api/index.json" | jq -r '[.versions[] | select(test("alpha|beta|rc") | not)] | reverse | .[]')
