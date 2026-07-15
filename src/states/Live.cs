@@ -36,8 +36,6 @@ public class LiveState : BaseState
             ? "exec MatchUp/live_aim.cfg"
             : "exec MatchUp/live.cfg");
 
-        Server.PrintToChatAll($" {ChatColors.Gold}[Pelipaja] Loaded {(aim ? "live_aim.cfg" : "live.cfg")} — mp_free_armor 0, mp_round_restart_delay 5");
-
         Server.ExecuteCommand("mp_restartgame 3");
 
         _lastBackupConVar = ConVar.Find("mp_backup_round_file_last");
