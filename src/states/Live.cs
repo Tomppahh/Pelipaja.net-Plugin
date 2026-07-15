@@ -31,9 +31,12 @@ public class LiveState : BaseState
         StatsProvider.OnMatchStart();
 
         Console.WriteLine("Executing Live cfg");
-        Server.ExecuteCommand(Utils.IsAimMap()
+        bool aim = Utils.IsAimMap();
+        Server.ExecuteCommand(aim
             ? "exec MatchUp/live_aim.cfg"
             : "exec MatchUp/live.cfg");
+
+        Server.PrintToChatAll($" {ChatColors.Gold}[Pelipaja] Loaded {(aim ? "live_aim.cfg" : "live.cfg")} — mp_free_armor 0, mp_round_restart_delay 5");
 
         Server.ExecuteCommand("mp_restartgame 3");
 
